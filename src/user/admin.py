@@ -5,7 +5,7 @@ from .models import User
 class CustomUserAdmin(UserAdmin):
     list_display = (
         'username', 'email', 'first_name', 'middle_name', 'last_name',  'is_staff',
-        'role', 'academicTitle', 'academicDegree', 'educationBase', 'studStatus', 'studentGroup', 'position',
+        'role', 'academicTitle', 'academicDegree', 'educationBase', 'studStatus', 'studentGroup', 'position', 'speciality', 'eduLevel', 'number_student_book'
         )
 
     fieldsets = (
@@ -46,6 +46,15 @@ class CustomUserAdmin(UserAdmin):
         ('studentGroup', {
             'fields': ('studentGroup',)
         }),
+        ('speciality', {
+            'fields': ('speciality',)
+        }),
+        ('eduLevel', {
+            'fields': ('eduLevel',)
+        }),
+        ('number_student_book', {
+            'fields': ('number_student_book',)
+        })
 
     )
 

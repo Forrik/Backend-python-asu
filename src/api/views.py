@@ -1,6 +1,8 @@
 from rest_framework import viewsets
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from api.serializers import CustomTokenObtainSerializer
 
@@ -8,16 +10,22 @@ from api.models import Role, Position, TicketStatus, Ticket, AcademicTitle, Acad
 
 from user.models import User
 
-from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketStatusSerializer, TicketCreateSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer
+from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketStatusSerializer, TicketCreateSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer
 
-from api.permission import IsStudent
+# from api.permission import IsStudent
 
 
 class UserViewSet(viewsets.ModelViewSet):
 
-    permission_classes = [IsAuthenticated, IsStudent]
+    permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class GetSelfProfileView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        serializer = UserProfileSerializer(request.user)
+        return Response(serializer.data)
 
 
 class RoleViewSet(viewsets.ModelViewSet):
@@ -113,7 +121,13 @@ class ConsultancyViewSet(viewsets.ModelViewSet):
 class SpecialityViewSet(viewsets.ModelViewSet):
 
     queryset = Speciality.objects.all()
-    serializer_class = SpecialitySerializer
+
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update']:
+            return SpecialityCreateSerializer
+        else:
+            return SpecialitySerializer
 
 
 class StudentGroupViewSet(viewsets.ModelViewSet):

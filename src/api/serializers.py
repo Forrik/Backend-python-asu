@@ -3,6 +3,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from api.models import Role, Position, TicketStatus, Ticket, AcademicTitle, AcademicDegree, EducationBase, EduForm, EduLevel, Graduation, StudStatus, WorkType, VkrHours, Consultancy, Speciality, StudentGroup, TimeNorm
 from user.models import User
 from rest_framework.validators import UniqueValidator
+from api.constants import Role as RoleEnum
 
 
 
@@ -147,7 +148,8 @@ class EduLevelSerializer(serializers.ModelSerializer):
 class GraduationSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
-    typeGraduation = serializers.CharField(validators=[UniqueValidator(queryset=Graduation.objects.all())]) 
+    typeGraduation = serializers.CharField(required=True)
+    # typeGraduation = serializers.CharField(validators=[UniqueValidator(queryset=Graduation.objects.all())]) 
     year = serializers.IntegerField(required=True)
 
     class Meta:
@@ -201,16 +203,20 @@ class SpecialitySerializer(serializers.ModelSerializer):
     code = serializers.CharField(validators=[UniqueValidator(queryset=Speciality.objects.all())])
     name = serializers.CharField(validators=[UniqueValidator(queryset=Speciality.objects.all())])
     abbreviation = serializers.CharField(validators=[UniqueValidator(queryset=Speciality.objects.all())])
-    edulevel = serializers.PrimaryKeyRelatedField(queryset=EduLevel.objects.all(), required=True)
+    edulevel = EduLevelSerializer(required=True)
 
     class Meta:
         model = Speciality
         fields = ('id', 'code', 'name', 'abbreviation', 'edulevel')
 
+class SpecialityCreateSerializer(SpecialitySerializer):
+    edulevel = serializers.PrimaryKeyRelatedField(queryset=EduLevel.objects.all(), required=True)
+    
+
 class StudentGroupSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
-    speciality_id = serializers.PrimaryKeyRelatedField(queryset=Speciality.objects.all(), required=True)
+    speciality_id = SpecialitySerializer(required=True)
     course = serializers.IntegerField(required=True)
     number = serializers.IntegerField(required=True)
     eduForm_id = serializers.PrimaryKeyRelatedField(queryset=EduForm.objects.all(), required=True)
@@ -239,16 +245,33 @@ class TimeNormSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     position = PositionSerializer()
+    studentGroup = StudentGroupSerializer()
+    eduLevel = EduLevelSerializer()
+    role = serializers.SerializerMethodField()
+    educationBase = EducationBaseSerializer()
+    academicTitle = AcademicTitleSerializer()
+    academicDegree = AcademicDegreeSerializer()
 
 
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position')
+        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality', 'role', 'academicTitle', 'academicDegree', 'eduLevel')
         extra_kwargs = {'password': {'write_only': True}}
 
+    def get_role(self, obj):
+        if obj.role is None:
+            return None
+
+        return dict(id=RoleEnum(obj.role).value, name=RoleEnum(obj.role).descr)    
+
+class UserProfileSerializer(UserSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality','role', 'academicTitle', 'academicDegree', 'eduLevel')
+
 class CustomTokenObtainSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
+      def validate(self, attrs):
 
         data = super().validate(attrs)
 
@@ -263,8 +286,8 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
             first_name = self.user.first_name,
             middle_name = self.user.middle_name,
             last_name = self.user.last_name,
-            role_id = self.user.role.id,
-            role_name = self.user.role.name
+            role_id = RoleEnum(self.user.role).value,
+            role_name = RoleEnum(self.user.role).descr
 
         )
 

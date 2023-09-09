@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.routers import DefaultRouter
-from api.views import UserViewSet, RoleViewSet, PositionViewSet,TicketStatusViewSet, TicketSerializerViewSet, AcademicTitleViewSet, AcademicDegreeViewSet, EducationBaseViewSet, EduFormViewSet, EduLevelViewSet, GraduationViewSet, StudStatusViewSet, WorkTypeViewSet, VkrHoursViewSet, ConsultancyViewSet, SpecialityViewSet, StudentGroupViewSet, TimeNormViewSet, CustomTokenObtainView
+from api.views import UserViewSet, RoleViewSet, PositionViewSet,TicketStatusViewSet, TicketSerializerViewSet, AcademicTitleViewSet, AcademicDegreeViewSet, EducationBaseViewSet, EduFormViewSet, EduLevelViewSet, GraduationViewSet, StudStatusViewSet, WorkTypeViewSet, VkrHoursViewSet, ConsultancyViewSet, SpecialityViewSet, StudentGroupViewSet, TimeNormViewSet, CustomTokenObtainView, GetSelfProfileView
 
 router = DefaultRouter()
 
@@ -23,12 +23,15 @@ router.register(r'consultancy', ConsultancyViewSet, basename='consultancy')
 router.register(r'speciality', SpecialityViewSet, basename='speciality')
 router.register(r'student_group', StudentGroupViewSet, basename='student_group')
 router.register(r'time_norm', TimeNormViewSet, basename='time_norm')
+
+
 # router.register(r'page', views.PageView, basename='page')
 
 
 urlpatterns = [
     path('login/', CustomTokenObtainView.as_view(), name='token_obtain_pair'),
     path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('me/', GetSelfProfileView.as_view()),
     # path('profile/', views.GetProfileView.as_view()),
     # path('profile/change_password', views.ChangePasswordView.as_view()),
     # path('search/<str:search>', views.SearchView.as_view()),

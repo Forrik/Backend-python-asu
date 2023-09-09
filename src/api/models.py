@@ -1,8 +1,10 @@
 
 from django.db import models
 
+
 class Role(models.Model):
-    name = models.CharField(verbose_name='Название роли', blank=False, null=False, max_length=128, unique=True)
+    name = models.CharField(verbose_name='Название роли',
+                            blank=False,  null=False, max_length=128, unique=True)
 
     class Meta:
         ordering = ['-id']
@@ -15,7 +17,8 @@ class Role(models.Model):
 
 
 class Position(models.Model):
-    name = models.CharField(verbose_name='Название должности', blank=False, null=False, max_length=128, unique=True)
+    name = models.CharField(verbose_name='Название должности',
+                            blank=False, null=False, max_length=128, unique=True)
 
     class Meta:
         ordering = ['-id']
@@ -28,7 +31,8 @@ class Position(models.Model):
 
 
 class TicketStatus(models.Model):
-    name = models.CharField(verbose_name='Название статуса заявки', blank=False, null=False, max_length=128, unique=True)
+    name = models.CharField(verbose_name='Название статуса заявки',
+                            blank=False, null=False, max_length=128, unique=True)
 
     class Meta:
         ordering = ['-id']
@@ -39,13 +43,20 @@ class TicketStatus(models.Model):
     def __str__(self):
         return f'{self.id}: {self.name}'
 
+
 class Ticket(models.Model):
-    dt_send = models.DateTimeField(verbose_name="Дата отправки заявки", blank=False, null=False, auto_now_add=True)
-    message = models.TextField(verbose_name="Сообщение", blank=False, null=False, max_length=1024)
-    ticketStatus = models.ForeignKey(TicketStatus, on_delete=models.SET_NULL, null=True)
-    teacher = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True, related_name='teacher')
-    student = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True, related_name='student')
-    dt_response = models.DateTimeField(verbose_name="Дата ответа", blank=True, null=True)
+    dt_send = models.DateTimeField(
+        verbose_name="Дата отправки заявки", blank=False, null=False, auto_now_add=True)
+    message = models.TextField(
+        verbose_name="Сообщение", blank=False, null=False, max_length=1024)
+    ticketStatus = models.ForeignKey(
+        TicketStatus, on_delete=models.SET_NULL, null=True)
+    teacher = models.ForeignKey(
+        'user.User', on_delete=models.SET_NULL, null=True, related_name='teacher')
+    student = models.ForeignKey(
+        'user.User', on_delete=models.SET_NULL, null=True, related_name='student')
+    dt_response = models.DateTimeField(
+        verbose_name="Дата ответа", blank=True, null=True)
 
     class Meta:
         ordering = ['-id']
@@ -54,12 +65,14 @@ class Ticket(models.Model):
         verbose_name_plural = 'заявки'
 
     def __str__(self):
-        return f'Заявка на консультацию №{self.id} от {self.student} к {self.teacher}' 
+        return f'Заявка на консультацию №{self.id} от {self.student} к {self.teacher}'
 
 
 class AcademicTitle(models.Model):
-    name = models.CharField(verbose_name='Название ученого звания', blank=False, null=False, max_length=128)
-    abbreviation = models.CharField(verbose_name='Сокращенное название ученого звания',default='аббревиатура', max_length=128)
+    name = models.CharField(
+        verbose_name='Название ученого звания',  blank=False, null=False, max_length=128)
+    abbreviation = models.CharField(
+        verbose_name='Сокращенное название ученого звания', default='аббревиатура', max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -70,9 +83,12 @@ class AcademicTitle(models.Model):
     def __str__(self):
         return f'{self.id}: {self.name}'
 
+
 class AcademicDegree(models.Model):
-    name = models.CharField(verbose_name='Название ученой степени', blank=False, null=False, max_length=128)
-    abbreviation = models.CharField(verbose_name='Сокращенное название ученой степени', default='аббревиатура', max_length=128)
+    name = models.CharField(
+        verbose_name='Название ученой степени', blank=False, null=False, max_length=128)
+    abbreviation = models.CharField(
+        verbose_name='Сокращенное название ученой степени', default='аббревиатура', max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -85,7 +101,8 @@ class AcademicDegree(models.Model):
 
 
 class EducationBase(models.Model):
-    name = models.CharField(verbose_name='Название основы обучения', blank=False, null=False, max_length=128)
+    name = models.CharField(
+        verbose_name='Название основы обучения', blank=False, null=False, max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -96,11 +113,13 @@ class EducationBase(models.Model):
     def __str__(self):
         return f'{self.id}: {self.name}'
 
+
 class VkrHours(models.Model):
 
     year = models.IntegerField(verbose_name='Год', blank=False, null=False)
     hours = models.IntegerField(verbose_name='Часы', blank=False, null=False)
-    user_id = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True)
+    user_id = models.ForeignKey(
+        'user.User', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         ordering = ['-id']
@@ -109,10 +128,12 @@ class VkrHours(models.Model):
         verbose_name_plural = 'Часы на ВКР'
 
     def __str__(self):
-        return f'{self.id}:'
+        return f'{self.id}:' + str(self.hours)
+
 
 class StudStatus(models.Model):
-    name = models.CharField(verbose_name='Статус студента', blank=False, null=False, max_length=128)
+    name = models.CharField(verbose_name='Статус студента',
+                            blank=False, null=False, max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -125,7 +146,8 @@ class StudStatus(models.Model):
 
 
 class WorkType(models.Model):
-    name = models.CharField(verbose_name='Вид работы', blank=False, null=False, max_length=128)
+    name = models.CharField(verbose_name='Вид работы',
+                            blank=False, null=False, max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -139,12 +161,14 @@ class WorkType(models.Model):
 
 class Consultancy(models.Model):
 
-    workType = models.ForeignKey(WorkType, on_delete=models.SET_NULL, null=True)
-    teacher = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True, related_name='teacherr')
-    student = models.ForeignKey('user.User', on_delete=models.SET_NULL, null=True, related_name='studentt')
-    comment = models.CharField(verbose_name='Комментарий', blank=False, null=False, max_length=128)
-
-
+    workType = models.ForeignKey(
+        WorkType, on_delete=models.SET_NULL, null=True)
+    teacher = models.ForeignKey(
+        'user.User', on_delete=models.SET_NULL, null=True, related_name='teacherr')
+    student = models.ForeignKey(
+        'user.User', on_delete=models.SET_NULL, null=True, related_name='studentt')
+    comment = models.CharField(
+        verbose_name='Комментарий', blank=False, null=False, max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -155,11 +179,11 @@ class Consultancy(models.Model):
     def __str__(self):
         return f'{self.id}: {self.teacher} к {self.student}'
 
+
 class EduLevel(models.Model):
 
-    name = models.CharField(verbose_name='Уровень образования', blank=False, null=False, max_length=128)
-
-
+    name = models.CharField(
+        verbose_name='Уровень образования', blank=False, null=False, max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -173,9 +197,8 @@ class EduLevel(models.Model):
 
 class EduForm(models.Model):
 
-    name = models.CharField(verbose_name='Форма обучения', blank=False, null=False, max_length=128)
-
-
+    name = models.CharField(verbose_name='Форма обучения',
+                            blank=False, null=False, max_length=128)
 
     class Meta:
         ordering = ['-id']
@@ -189,10 +212,9 @@ class EduForm(models.Model):
 
 class Graduation(models.Model):
 
-    typeGraduation = models.CharField(verbose_name='Тип выпуска', blank=False, null=False, max_length=128)
+    typeGraduation = models.CharField(
+    verbose_name='Тип выпуска', blank=False, null=False, max_length=128)
     year = models.IntegerField(verbose_name='Год', blank=False, null=False)
-
-
 
     class Meta:
         ordering = ['-id']
@@ -206,27 +228,36 @@ class Graduation(models.Model):
 
 class Speciality(models.Model):
 
-   code = models.CharField(verbose_name='Код специальности', blank=False, null=False, max_length=128)
-   name = models.CharField(verbose_name='Название специальности', blank=False, null=False, max_length=128)
-   abbreviation = models.CharField(verbose_name='Сокращенное название специальности', blank=False, null=False, max_length=128)
-   edulevel = models.ForeignKey(EduLevel, on_delete=models.SET_NULL, null=True)
+    code = models.CharField(verbose_name='Код специальности',
+                            blank=False, null=False, max_length=128)
+    name = models.CharField(
+        verbose_name='Название специальности', blank=False, null=False, max_length=128)
+    abbreviation = models.CharField(
+        verbose_name='Сокращенное название специальности', blank=False, null=False, max_length=128)
+    edulevel = models.ForeignKey(
+        EduLevel, on_delete=models.SET_NULL, null=True)
 
-   class Meta: 
+    class Meta:
         ordering = ['-id']
         db_table = 'speciality'
         verbose_name = 'Специальность'
         verbose_name_plural = 'Специальности'
 
-   def __str__(self):
-        return f'Специльность №{self.id} {self.name}' 
+    def __str__(self):
+        return f'Специльность №{self.id} {self.name}'
 
 
 class StudentGroup(models.Model):
-    speciality_id = models.ForeignKey(Speciality, on_delete=models.SET_NULL, null=True)
-    course = models.CharField(verbose_name='Курс', blank=False, null=False, max_length=128)
-    number = models.IntegerField(verbose_name='Номер группы', blank=False, null=False)
-    eduForm_id = models.ForeignKey(EduForm, on_delete=models.SET_NULL, null=True)
-    eduGraduation_id = models.ForeignKey(Graduation, on_delete=models.SET_NULL, null=True)
+    speciality_id = models.ForeignKey(
+        Speciality, on_delete=models.SET_NULL, null=True)
+    course = models.CharField(
+        verbose_name='Курс', blank=False, null=False, max_length=128)
+    number = models.IntegerField(
+        verbose_name='Номер группы', blank=False, null=False)
+    eduForm_id = models.ForeignKey(
+        EduForm, on_delete=models.SET_NULL, null=True)
+    eduGraduation_id = models.ForeignKey(
+        Graduation, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         ordering = ['-id']
@@ -239,11 +270,14 @@ class StudentGroup(models.Model):
 
 
 class TimeNorm(models.Model):
-    hours = models.IntegerField(verbose_name='Количество часов', blank=False, null=False)
-    speciality = models.ForeignKey(Speciality, on_delete=models.SET_NULL, null=True)
-    workType = models.ForeignKey(WorkType, on_delete=models.SET_NULL, null=True)
-    graduation_id = models.ForeignKey(Graduation, on_delete=models.SET_NULL, null=True)
-
+    hours = models.IntegerField(
+        verbose_name='Количество часов', blank=False, null=False)
+    speciality = models.ForeignKey(
+        Speciality, on_delete=models.SET_NULL, null=True)
+    workType = models.ForeignKey(
+        WorkType, on_delete=models.SET_NULL, null=True)
+    graduation_id = models.ForeignKey(
+        Graduation, on_delete=models.SET_NULL, null=True)
 
     class Meta:
         ordering = ['-id']
