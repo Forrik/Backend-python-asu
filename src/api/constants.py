@@ -29,3 +29,8 @@ class Role(IntDescriptionEnum):
     STUDENT = 1, "Студент"
     TEACHER = 2, "Учитель"
     SPECIALIST = 3, "Специалист УМР"
+
+class TicketStatusEnum(IntDescriptionEnum):
+    NEW = 1, "Новая"
+    ACCEPTED = 2, "Принятая"
+    REJECTED = 3, "Отклонено"

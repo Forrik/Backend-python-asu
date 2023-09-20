@@ -1,5 +1,6 @@
 
 from django.db import models
+from api.constants import TicketStatusEnum
 
 
 class Role(models.Model):
@@ -30,18 +31,6 @@ class Position(models.Model):
         return f'{self.id}: {self.name}'
 
 
-class TicketStatus(models.Model):
-    name = models.CharField(verbose_name='Название статуса заявки',
-                            blank=False, null=False, max_length=128, unique=True)
-
-    class Meta:
-        ordering = ['-id']
-        db_table = 'ticket_status'
-        verbose_name = 'Статус заявки'
-        verbose_name_plural = 'Статусы заявок'
-
-    def __str__(self):
-        return f'{self.id}: {self.name}'
 
 
 class Ticket(models.Model):
@@ -49,8 +38,14 @@ class Ticket(models.Model):
         verbose_name="Дата отправки заявки", blank=False, null=False, auto_now_add=True)
     message = models.TextField(
         verbose_name="Сообщение", blank=False, null=False, max_length=1024)
-    ticketStatus = models.ForeignKey(
-        TicketStatus, on_delete=models.SET_NULL, null=True)
+
+    ticketStatus = models.IntegerField(
+        choices=[
+             (TicketStatusEnum.NEW.value, TicketStatusEnum.NEW.descr),
+             (TicketStatusEnum.ACCEPTED.value, TicketStatusEnum.ACCEPTED.descr),
+             (TicketStatusEnum.REJECTED.value, TicketStatusEnum.REJECTED.descr),
+        ], default=TicketStatusEnum.NEW.value, verbose_name='Статус заявки',
+    )
     teacher = models.ForeignKey(
         'user.User', on_delete=models.SET_NULL, null=True, related_name='teacher')
     student = models.ForeignKey(
@@ -128,7 +123,7 @@ class VkrHours(models.Model):
         verbose_name_plural = 'Часы на ВКР'
 
     def __str__(self):
-        return f'{self.id}:' + str(self.hours)
+        return f'{self.id}:' + str(self.hours) + ' часов'+ ' ' + str(self.year) 
 
 
 class StudStatus(models.Model):
@@ -143,6 +138,9 @@ class StudStatus(models.Model):
 
     def __str__(self):
         return f'{self.id}: {self.name}'
+
+
+
 
 
 class WorkType(models.Model):
@@ -250,8 +248,8 @@ class Speciality(models.Model):
 class StudentGroup(models.Model):
     speciality_id = models.ForeignKey(
         Speciality, on_delete=models.SET_NULL, null=True)
-    course = models.CharField(
-        verbose_name='Курс', blank=False, null=False, max_length=128)
+    course = models.IntegerField(
+        verbose_name='Курс', blank=False, null=False)
     number = models.IntegerField(
         verbose_name='Номер группы', blank=False, null=False)
     eduForm_id = models.ForeignKey(
@@ -266,8 +264,8 @@ class StudentGroup(models.Model):
         verbose_name_plural = 'Группы'
 
     def __str__(self):
-        return f'{self.id}:'
-
+        return f'{self.id}: {self.course} курс {self.number} группы {self.speciality_id} {self.eduForm_id}'
+        
 
 class TimeNorm(models.Model):
     hours = models.IntegerField(

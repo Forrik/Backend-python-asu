@@ -1,10 +1,9 @@
 from django.contrib import admin
-from .models import Role, Position, TicketStatus, Ticket, AcademicTitle, AcademicDegree, EducationBase, VkrHours, StudStatus, WorkType, Consultancy, EduLevel, EduForm, Graduation, Speciality, StudentGroup, TimeNorm
+from .models import Role, Position, Ticket, AcademicTitle, AcademicDegree, EducationBase, VkrHours, StudStatus, WorkType, Consultancy, EduLevel, EduForm, Graduation, Speciality, StudentGroup, TimeNorm
 
 
 admin.site.register(Role)
 admin.site.register(Position)
-admin.site.register(TicketStatus)
 admin.site.register(Ticket)
 admin.site.register(AcademicTitle)
 admin.site.register(AcademicDegree)

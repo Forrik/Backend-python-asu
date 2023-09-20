@@ -1,8 +1,13 @@
 from rest_framework.permissions import BasePermission
+from api.constants import Role
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):
-        if request.user.role.name == "Студент":
+        if not hasattr(request.user, 'role'):
+            return False
+        if request.user.role is None: 
+            return False
+        if request.user.role == Role.STUDENT.value:
             return True
         return False
 

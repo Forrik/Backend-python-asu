@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from api.models import Role, Position, TicketStatus, Ticket, AcademicTitle, AcademicDegree, EducationBase, EduForm, EduLevel, Graduation, StudStatus, WorkType, VkrHours, Consultancy, Speciality, StudentGroup, TimeNorm
+from api.models import Role, Position, Ticket, AcademicTitle, AcademicDegree, EducationBase, EduForm, EduLevel, Graduation, StudStatus, WorkType, VkrHours, Consultancy, Speciality, StudentGroup, TimeNorm
 from user.models import User
 from rest_framework.validators import UniqueValidator
 from api.constants import Role as RoleEnum
+from api.constants import TicketStatusEnum
+
 
 
 
@@ -43,33 +45,24 @@ class PositionSerializer(serializers.Serializer):
         model = Position
         fields = ('id', 'name')
 
+class ShortUserSerializer(serializers.ModelSerializer):
 
-class TicketStatusSerializer(serializers.Serializer):
-    id = serializers.ReadOnlyField()
 
-    name = serializers.CharField(validators=[UniqueValidator(queryset=TicketStatus.objects.all())])
-
-    def create(self, validated_data):
-        return TicketStatus.objects.create(**validated_data)
-    
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.save()
-        return instance
-    
 
     class Meta:
-        model = TicketStatus
-        fields = ('id', 'name')
+        model = User
+        fields = ('id', 'first_name','middle_name', 'last_name')
 
-class TicketCreateSerializer(serializers.ModelSerializer):
+
+
+class TicketSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
     dt_send = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=True)
     message = serializers.CharField(required=True, max_length=1024)
-    ticketStatus = serializers.PrimaryKeyRelatedField(queryset=TicketStatus.objects.all(), required=True)
-    teacher = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=True)
-    student = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=True)
+    ticketStatus = serializers.SerializerMethodField()
+    teacher = ShortUserSerializer(required=True)
+    student = ShortUserSerializer(required=True)
     dt_response = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=False)
 
 
@@ -77,25 +70,23 @@ class TicketCreateSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = ('id', 'dt_send', 'message', 'ticketStatus', 'teacher', 'student', 'dt_response')
 
+    def get_ticketStatus(self, obj):
+        if obj.ticketStatus is None:
+            return None
 
-class ShortUserSerializer(serializers.ModelSerializer):
-
-
-
-    class Meta:
-        model = User
-        fields = ('id', 'first_name','middle_name', 'last_name', )
+        return dict(id=TicketStatusEnum(obj.ticketStatus).value, name=TicketStatusEnum(obj.ticketStatus).descr)
 
 
-class TicketSerializer(TicketCreateSerializer):
 
-    ticketStatus = TicketStatusSerializer()
-    teacher = ShortUserSerializer()
-    student = ShortUserSerializer()
 
-    class Meta:
+class NewTicketSerializer(serializers.ModelSerializer):
+    
+    teacher = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=True)
+    message = serializers.CharField(required=True, max_length=1024)
+
+    class Meta: 
         model = Ticket
-        fields = ('id', 'dt_send', 'message', 'ticketStatus', 'teacher', 'student', 'dt_response')
+        fields = ('message', 'teacher')
 
 class AcademicTitleSerializer(serializers.ModelSerializer):
 
@@ -174,7 +165,7 @@ class WorkTypeSerializer(serializers.ModelSerializer):
         model = WorkType
         fields = ('id', 'name')
 
-class VkrHoursSerializer(serializers.ModelSerializer):
+class  VkrHoursSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
     year = serializers.IntegerField(required=True)
@@ -219,7 +210,7 @@ class StudentGroupSerializer(serializers.ModelSerializer):
     speciality_id = SpecialitySerializer(required=True)
     course = serializers.IntegerField(required=True)
     number = serializers.IntegerField(required=True)
-    eduForm_id = serializers.PrimaryKeyRelatedField(queryset=EduForm.objects.all(), required=True)
+    eduForm_id = EduFormSerializer(required=True)
     eduGraduation_id = serializers.PrimaryKeyRelatedField(queryset=Graduation.objects.all(), required=True)
     
 
@@ -248,15 +239,16 @@ class UserSerializer(serializers.ModelSerializer):
     studentGroup = StudentGroupSerializer()
     eduLevel = EduLevelSerializer()
     role = serializers.SerializerMethodField()
-    educationBase = EducationBaseSerializer()
-    academicTitle = AcademicTitleSerializer()
-    academicDegree = AcademicDegreeSerializer()
-
+    educationBase = EducationBaseSerializer(required=False)
+    academicTitle = AcademicTitleSerializer(required=False)
+    academicDegree = AcademicDegreeSerializer(required=False)
+    vkrHours = VkrHoursSerializer(required=False)
+    teacher_groups = StudentGroupSerializer(many=True, source = 'teacherGroups')
 
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality', 'role', 'academicTitle', 'academicDegree', 'eduLevel')
+        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality', 'role', 'academicTitle', 'academicDegree', 'eduLevel', 'vkrHours', 'teacher_groups')
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_role(self, obj):
@@ -268,7 +260,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(UserSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality','role', 'academicTitle', 'academicDegree', 'eduLevel')
+        fields = ('id', 'username', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality','role', 'academicTitle', 'academicDegree', 'eduLevel', 'vkrHours')
 
 class CustomTokenObtainSerializer(TokenObtainPairSerializer):
       def validate(self, attrs):
@@ -292,3 +284,22 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
         )
 
         return data
+
+class StudentInGroupSerializer(UserSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'first_name', 'middle_name', 'last_name', 'role')
+
+class GroupWithStudentSerializer(StudentGroupSerializer):
+    student_group = StudentInGroupSerializer(many=True)
+
+    class Meta:
+        model = StudentGroup
+        fields = ('id', 'speciality_id', 'course', 'number', 'eduForm_id', 'eduGraduation_id', 'student_group')
+
+class UserGraduationSerializer(UserSerializer):
+    teacherGroups = GroupWithStudentSerializer(many=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'first_name', 'middle_name', 'last_name', 'position', 'role', 'teacherGroups')

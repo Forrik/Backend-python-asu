@@ -5,7 +5,7 @@ from .models import User
 class CustomUserAdmin(UserAdmin):
     list_display = (
         'username', 'email', 'first_name', 'middle_name', 'last_name',  'is_staff',
-        'role', 'academicTitle', 'academicDegree', 'educationBase', 'studStatus', 'studentGroup', 'position', 'speciality', 'eduLevel', 'number_student_book'
+        'role', 'academicTitle', 'academicDegree', 'educationBase', 'studStatus', 'studentGroup', 'position', 'speciality', 'eduLevel', 'number_student_book', 'vkrHours'
         )
 
     fieldsets = (
@@ -54,8 +54,16 @@ class CustomUserAdmin(UserAdmin):
         }),
         ('number_student_book', {
             'fields': ('number_student_book',)
+        }),
+        ('vkrHours', {
+            'fields': ('vkrHours',)
+        }),
+        ('teacherGroups', {
+            'fields': ('teacherGroups',)
         })
 
     )
+
+    filter_horizontal = ("teacherGroups",)
 
 admin.site.register(User, CustomUserAdmin)

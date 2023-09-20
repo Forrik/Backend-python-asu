@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from api.models import Position, AcademicTitle, AcademicDegree, EducationBase, StudStatus, StudentGroup, Speciality, EduLevel
+from api.models import Position, AcademicTitle, AcademicDegree, EducationBase, StudStatus, StudentGroup, Speciality, EduLevel, VkrHours
 
 from api.constants import Role
 
@@ -16,15 +16,17 @@ class User(AbstractUser):
     role = models.IntegerField(
         choices=[
             (Role.STUDENT.value, "Студент"),
-            # (Role.TEACHER, "Преподаватель"),
-            # (Role.SPECIALIST, "Специалист УМР"),
+            (Role.TEACHER.value, "Преподаватель"),
+            (Role.SPECIALIST.value, "Специалист УМР"),
         ], default=None, null=True, verbose_name='Роль')
+
 
     educationBase = models.ForeignKey(EducationBase,  on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Основа обучения')
     studStatus = models.ForeignKey(StudStatus,  on_delete=models.SET_NULL, null=True, verbose_name='Статус студента', blank=True)
-    studentGroup = models.ForeignKey(StudentGroup,  on_delete=models.SET_NULL, null=True, verbose_name='Группа', blank=True)
+    studentGroup = models.ForeignKey(StudentGroup,  on_delete=models.SET_NULL, null=True, verbose_name='Группа', related_name='student_group', blank=True)
     speciality = models.ForeignKey(Speciality,  on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Специальность')
     eduLevel = models.ForeignKey(EduLevel,  on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Уровень образования')
-    
+    vkrHours = models.ForeignKey(VkrHours,  on_delete=models.SET_NULL, null=True, blank=True, default=None, verbose_name='Часы на ВКР')
+    teacherGroups = models.ManyToManyField(StudentGroup, verbose_name = 'Группы преподавателя', related_name='teacher_groups')
    
     

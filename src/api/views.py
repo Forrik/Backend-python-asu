@@ -3,14 +3,19 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 
 from api.serializers import CustomTokenObtainSerializer
 
-from api.models import Role, Position, TicketStatus, Ticket, AcademicTitle, AcademicDegree, EducationBase, EduForm, EduLevel, Graduation, StudStatus, WorkType, VkrHours, Consultancy, Speciality, StudentGroup, TimeNorm
+from api.models import Role, Position, Ticket, AcademicTitle, AcademicDegree, EducationBase, EduForm, EduLevel, Graduation, StudStatus, WorkType, VkrHours, Consultancy, Speciality, StudentGroup, TimeNorm
 
 from user.models import User
 
-from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketStatusSerializer, TicketCreateSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer
+from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer, UserGraduationSerializer, NewTicketSerializer
+
+from django_filters.rest_framework import DjangoFilterBackend
+
+from api.permission import IsStudent
 
 # from api.permission import IsStudent
 
@@ -20,12 +25,16 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["role"]
 
 class GetSelfProfileView(APIView):
 
     def get(self, request, *args, **kwargs):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
+
+
 
 
 class RoleViewSet(viewsets.ModelViewSet):
@@ -40,22 +49,15 @@ class PositionViewSet(viewsets.ModelViewSet):
     serializer_class = PositionSerializer
 
 
-class TicketStatusViewSet(viewsets.ModelViewSet):
-
-    queryset = TicketStatus.objects.all()
-    serializer_class = TicketStatusSerializer
-
-
-class TicketSerializerViewSet(viewsets.ModelViewSet):
+class TicketViewSet(viewsets.ModelViewSet):
 
     queryset = Ticket.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["ticketStatus", "student", "teacher"]
     # serializer_class = TicketCreateSerializer
 
     def get_serializer_class(self):
-        if self.action in ['create', 'update']:
-            return TicketCreateSerializer
-        else:
-            return TicketSerializer
+        return TicketSerializer
 
 
 class AcademicTitleViewSet(viewsets.ModelViewSet):
@@ -144,3 +146,30 @@ class TimeNormViewSet(viewsets.ModelViewSet):
 
 class CustomTokenObtainView(TokenObtainPairView):
     serializer_class = CustomTokenObtainSerializer
+
+class UserGraduationView(APIView):
+
+    def get(self, request, graduation_id, *args, **kwargs):
+        groups_for_graduation = StudentGroup.objects.filter(eduGraduation_id=graduation_id)
+        queryset = User.objects.filter(teacherGroups__in=groups_for_graduation).distinct()
+        serializer = UserGraduationSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+class TicketCreateView(APIView):
+
+    permission_classes = [IsStudent]
+    def post(self, request, *args, **kwargs):
+        serializer = NewTicketSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # serializer.save()
+
+        is_ticket_already_exist = Ticket.objects.filter(student=request.user, teacher__id=serializer.validated_data['teacher'].id).exists()
+        print(is_ticket_already_exist)
+        if is_ticket_already_exist:
+            return Response({"error": "Ticket already exist"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            ticket = Ticket.objects.create(student=request.user, teacher=serializer.validated_data['teacher'], message=serializer.validated_data['message'])
+            
+
+
+        return Response(serializer.data)
