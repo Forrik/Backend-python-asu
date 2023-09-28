@@ -11,13 +11,17 @@ from api.models import Role, Position, Ticket, AcademicTitle, AcademicDegree, Ed
 
 from user.models import User
 
-from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer, UserGraduationSerializer, NewTicketSerializer
+from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer, NewTicketSerializer, UpdateTicketStatusSerializer
+
+from api import serializers
 
 from django_filters.rest_framework import DjangoFilterBackend
 
-from api.permission import IsStudent
-
+from api.permission import IsStudent, IsTeacher, IsSpecialist, IsSpecialistOrTeacher
+from datetime import datetime
 # from api.permission import IsStudent
+from api.constants import Role as RoleEnum, TicketStatusEnum
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -149,10 +153,53 @@ class CustomTokenObtainView(TokenObtainPairView):
 
 class UserGraduationView(APIView):
 
+    def _get_hours_for_student(self, time_norms_qs, spec_id):
+        qs = time_norms_qs.filter(speciality=spec_id)
+        hours = 0
+        for item in qs:
+            hours += item.hours
+        return hours
+
     def get(self, request, graduation_id, *args, **kwargs):
-        groups_for_graduation = StudentGroup.objects.filter(eduGraduation_id=graduation_id)
-        queryset = User.objects.filter(teacherGroups__in=groups_for_graduation).distinct()
-        serializer = UserGraduationSerializer(queryset, many=True)
+        tickets_qs = Ticket.objects.filter(
+            student__studentGroup__eduGraduation_id=graduation_id,
+            ticketStatus=TicketStatusEnum.ACCEPTED.value
+        ).select_related('student__studentGroup')
+
+        spec_ids = tickets_qs.values_list('student__studentGroup__speciality_id__id', flat=True)
+
+        time_norms = TimeNorm.objects\
+        .filter(graduation_id=graduation_id, speciality__id__in=set(spec_ids))
+
+        result = []
+        for ticket in tickets_qs:
+            teacher = ticket.teacher
+            if teacher not in result:
+                result.append(teacher)
+                teacher.hours_sum = 0
+                teacher.groups_set = []
+            else:
+                teacher_idx = result.index(teacher)
+                teacher = result[teacher_idx]
+
+            group = ticket.student.studentGroup
+            if group not in teacher.groups_set:
+                teacher.groups_set.append(group)
+                group.hours = 0
+                group.students = []
+            else:
+                group_idx = teacher.groups_set.index(group)
+                group = teacher.groups_set[group_idx]
+
+
+            student = ticket.student
+            if student not in group.students:
+                group.students.append(student)
+                student.hours = self._get_hours_for_student(time_norms, group.speciality_id)
+                group.hours += student.hours
+                teacher.hours_sum += student.hours
+
+        serializer = serializers.TimeNormGraduationSerializer(result, many=True)
         return Response(serializer.data)
 
 class TicketCreateView(APIView):
@@ -171,5 +218,35 @@ class TicketCreateView(APIView):
             ticket = Ticket.objects.create(student=request.user, teacher=serializer.validated_data['teacher'], message=serializer.validated_data['message'])
             
 
+
+        return Response(serializer.data)
+
+class TicketStatusUpdate(APIView):
+    permission_classes = [IsSpecialistOrTeacher]
+
+    def post(self, request, ticket_id, *args, **kwargs):
+        serializer = UpdateTicketStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        print(serializer.validated_data)
+        try:
+            ticket = Ticket.objects.get(id=ticket_id)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if request.user.role == RoleEnum.TEACHER.value:
+
+
+            if ticket.teacher != request.user:
+                return Response({"error": "Wrong ticket"}, status=status.HTTP_403_FORBIDDEN)
+
+            ticket.ticketStatus = serializer.validated_data['ticketStatus']
+            ticket.dt_response = datetime.now()
+            ticket.save()
+        elif request.user.role == RoleEnum.SPECIALIST.value:
+            ticket.ticketStatus = serializer.validated_data['ticketStatus']
+            ticket.dt_response = datetime.now()
+            ticket.save()
+        else:
+            return Response({"error": "Role should be teacher or specialist"}, status=status.HTTP_403_FORBIDDEN)
 
         return Response(serializer.data)

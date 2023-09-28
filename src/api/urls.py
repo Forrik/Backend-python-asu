@@ -1,7 +1,7 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.routers import DefaultRouter
-from api.views import UserViewSet, RoleViewSet, PositionViewSet, TicketViewSet, AcademicTitleViewSet, AcademicDegreeViewSet, EducationBaseViewSet, EduFormViewSet, EduLevelViewSet, GraduationViewSet, StudStatusViewSet, WorkTypeViewSet, VkrHoursViewSet, ConsultancyViewSet, SpecialityViewSet, StudentGroupViewSet, TimeNormViewSet, CustomTokenObtainView, GetSelfProfileView, UserGraduationView, TicketCreateView
+from api.views import UserViewSet, RoleViewSet, PositionViewSet, TicketViewSet, AcademicTitleViewSet, AcademicDegreeViewSet, EducationBaseViewSet, EduFormViewSet, EduLevelViewSet, GraduationViewSet, StudStatusViewSet, WorkTypeViewSet, VkrHoursViewSet, ConsultancyViewSet, SpecialityViewSet, StudentGroupViewSet, TimeNormViewSet, CustomTokenObtainView, GetSelfProfileView, UserGraduationView, TicketCreateView, TicketStatusUpdate 
 
 router = DefaultRouter()
 
@@ -34,6 +34,7 @@ urlpatterns = [
     path('me/', GetSelfProfileView.as_view()),
     path('user_graduation/<int:graduation_id>', UserGraduationView.as_view(), name='user_graduation'),
     path('ticket_create/', TicketCreateView.as_view(), name='ticket_create'),
+    path('ticket_status_update/<int:ticket_id>', TicketStatusUpdate.as_view(), name='ticket_status_update'),
     # path('profile/', views.GetProfileView.as_view()),
     # path('profile/change_password', views.ChangePasswordView.as_view()),
     # path('search/<str:search>', views.SearchView.as_view()),

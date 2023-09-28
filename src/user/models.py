@@ -27,6 +27,6 @@ class User(AbstractUser):
     speciality = models.ForeignKey(Speciality,  on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Специальность')
     eduLevel = models.ForeignKey(EduLevel,  on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Уровень образования')
     vkrHours = models.ForeignKey(VkrHours,  on_delete=models.SET_NULL, null=True, blank=True, default=None, verbose_name='Часы на ВКР')
-    teacherGroups = models.ManyToManyField(StudentGroup, verbose_name = 'Группы преподавателя', related_name='teacher_groups')
+
    
     

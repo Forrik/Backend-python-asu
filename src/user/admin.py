@@ -58,12 +58,7 @@ class CustomUserAdmin(UserAdmin):
         ('vkrHours', {
             'fields': ('vkrHours',)
         }),
-        ('teacherGroups', {
-            'fields': ('teacherGroups',)
-        })
-
     )
 
-    filter_horizontal = ("teacherGroups",)
 
 admin.site.register(User, CustomUserAdmin)

@@ -47,34 +47,13 @@ class PositionSerializer(serializers.Serializer):
 
 class ShortUserSerializer(serializers.ModelSerializer):
 
-
+    
 
     class Meta:
         model = User
         fields = ('id', 'first_name','middle_name', 'last_name')
 
 
-
-class TicketSerializer(serializers.ModelSerializer):
-
-    id = serializers.ReadOnlyField()
-    dt_send = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=True)
-    message = serializers.CharField(required=True, max_length=1024)
-    ticketStatus = serializers.SerializerMethodField()
-    teacher = ShortUserSerializer(required=True)
-    student = ShortUserSerializer(required=True)
-    dt_response = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=False)
-
-
-    class Meta:
-        model = Ticket
-        fields = ('id', 'dt_send', 'message', 'ticketStatus', 'teacher', 'student', 'dt_response')
-
-    def get_ticketStatus(self, obj):
-        if obj.ticketStatus is None:
-            return None
-
-        return dict(id=TicketStatusEnum(obj.ticketStatus).value, name=TicketStatusEnum(obj.ticketStatus).descr)
 
 
 
@@ -87,6 +66,12 @@ class NewTicketSerializer(serializers.ModelSerializer):
     class Meta: 
         model = Ticket
         fields = ('message', 'teacher')
+
+class UpdateTicketStatusSerializer(serializers.ModelSerializer):
+
+        class Meta: 
+            model = Ticket
+            fields = ('ticketStatus',)
 
 class AcademicTitleSerializer(serializers.ModelSerializer):
 
@@ -155,6 +140,7 @@ class StudStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudStatus
         fields = ('id', 'name')
+        
 
 class WorkTypeSerializer(serializers.ModelSerializer):
 
@@ -219,6 +205,40 @@ class StudentGroupSerializer(serializers.ModelSerializer):
         model = StudentGroup
         fields = ('id', 'speciality_id', 'course', 'number', 'eduForm_id', 'eduGraduation_id')
 
+
+class ShortStudentSerializer(ShortUserSerializer):
+    student_group = StudentGroupSerializer(source='studentGroup')
+
+    class Meta:
+        model = User
+        fields = ('id', 'first_name','middle_name', 'last_name', 'student_group')
+
+
+
+class TicketSerializer(serializers.ModelSerializer):
+
+    id = serializers.ReadOnlyField()
+    dt_send = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=True)
+    message = serializers.CharField(required=True, max_length=1024)
+    ticketStatus = serializers.SerializerMethodField()
+    teacher = ShortUserSerializer(required=True)
+    student = ShortStudentSerializer(required=True)
+    dt_response = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=False)
+
+
+    class Meta:
+        model = Ticket
+        fields = ('id', 'dt_send', 'message', 'ticketStatus', 'teacher', 'student', 'dt_response')
+
+    def get_ticketStatus(self, obj):
+        if obj.ticketStatus is None:
+            return None
+
+        return dict(id=TicketStatusEnum(obj.ticketStatus).value, name=TicketStatusEnum(obj.ticketStatus).descr)
+
+
+
+
 class TimeNormSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
@@ -243,12 +263,11 @@ class UserSerializer(serializers.ModelSerializer):
     academicTitle = AcademicTitleSerializer(required=False)
     academicDegree = AcademicDegreeSerializer(required=False)
     vkrHours = VkrHoursSerializer(required=False)
-    teacher_groups = StudentGroupSerializer(many=True, source = 'teacherGroups')
 
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality', 'role', 'academicTitle', 'academicDegree', 'eduLevel', 'vkrHours', 'teacher_groups')
+        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position', 'number_student_book', 'studentGroup', 'studStatus', 'educationBase', 'speciality', 'role', 'academicTitle', 'academicDegree', 'eduLevel', 'vkrHours')
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_role(self, obj):
@@ -285,21 +304,75 @@ class CustomTokenObtainSerializer(TokenObtainPairSerializer):
 
         return data
 
+
+class ShortUserWithRoleSerializer(UserSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'first_name', 'middle_name', 'last_name', 'role')
+
 class StudentInGroupSerializer(UserSerializer):
     class Meta:
         model = User
         fields = ('id', 'first_name', 'middle_name', 'last_name', 'role')
 
-class GroupWithStudentSerializer(StudentGroupSerializer):
-    student_group = StudentInGroupSerializer(many=True)
-
-    class Meta:
-        model = StudentGroup
-        fields = ('id', 'speciality_id', 'course', 'number', 'eduForm_id', 'eduGraduation_id', 'student_group')
-
-class UserGraduationSerializer(UserSerializer):
-    teacherGroups = GroupWithStudentSerializer(many=True)
+class ShortStudentWithHoursSerializer(ShortUserWithRoleSerializer):
+    hours = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('id', 'first_name', 'middle_name', 'last_name', 'position', 'role', 'teacherGroups')
+        fields = ('id', 'first_name', 'middle_name', 'last_name', 'role', 'hours')
+
+    def get_hours(self, obj):
+        if obj is None:
+            return None
+        
+        return obj.hours
+
+class GroupWithStudentSerializer(ShortUserWithRoleSerializer):
+    group_name = serializers.SerializerMethodField()
+    hours = serializers.SerializerMethodField()
+    students = ShortStudentWithHoursSerializer(many=True)
+    class Meta:
+        model = StudentGroup
+        fields = ('id', 
+                  'hours',
+                  'group_name',
+                  'students'
+                  )
+    
+    def get_group_name(self, obj):
+        if obj is None:
+            return None
+        
+        return str(obj)
+
+    def get_hours(self, obj):
+        if obj is None:
+            return None
+        
+        return obj.hours
+
+
+
+class ShortTeacherWithGroupsSerializer(ShortUserWithRoleSerializer):
+    groups = GroupWithStudentSerializer(many=True, source="groups_set")
+
+class TimeNormGraduationSerializer(ShortTeacherWithGroupsSerializer):
+
+    hours_sum = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'first_name',
+            'middle_name',
+            'last_name',
+            'role',
+            'groups',
+            'hours_sum'
+            )
+    def get_hours_sum(self, obj):
+        if obj is None:
+            return None
+        
+        return obj.hours_sum

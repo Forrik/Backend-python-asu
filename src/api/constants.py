@@ -27,7 +27,7 @@ class IntDescriptionEnum(IntEnum):
 
 class Role(IntDescriptionEnum):
     STUDENT = 1, "Студент"
-    TEACHER = 2, "Учитель"
+    TEACHER = 2, "Преподаватель"
     SPECIALIST = 3, "Специалист УМР"
 
 class TicketStatusEnum(IntDescriptionEnum):

@@ -13,12 +13,30 @@ class IsStudent(BasePermission):
 
 class IsTeacher(BasePermission):
     def has_permission(self, request, view):
-        if request.user.role.name == "Преподаватель":
+        if not hasattr(request.user, 'role'):
+            return False
+        if request.user.role is None: 
+            return False
+        if request.user.role == Role.TEACHER.value:
             return True
         return False
 
 class IsSpecialist(BasePermission):
     def has_permission(self, request, view):
-        if request.user.role.name == "Специалист УМР":
+        if not hasattr(request.user, 'role'):
+            return False
+        if request.user.role is None: 
+            return False
+        if request.user.role == Role.SPECIALIST.value:
+            return True
+        return False
+
+class IsSpecialistOrTeacher(BasePermission):
+    def has_permission(self, request, view):
+        if not hasattr(request.user, 'role'):
+            return False
+        if request.user.role is None: 
+            return False
+        if request.user.role == Role.SPECIALIST.value or request.user.role == Role.TEACHER.value:
             return True
         return False
