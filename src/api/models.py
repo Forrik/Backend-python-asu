@@ -113,8 +113,6 @@ class VkrHours(models.Model):
 
     year = models.IntegerField(verbose_name='Год', blank=False, null=False)
     hours = models.IntegerField(verbose_name='Часы', blank=False, null=False)
-    user_id = models.ForeignKey(
-        'user.User', on_delete=models.SET_NULL, null=True)
 
     class Meta:
         ordering = ['-id']

@@ -164,11 +164,10 @@ class  VkrHoursSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
     year = serializers.IntegerField(required=True)
     hours = serializers.IntegerField(required=True)
-    user_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=True)
 
     class Meta:
         model = VkrHours
-        fields = ('id', 'year', 'hours', 'user_id')
+        fields = ('id', 'year', 'hours')
 
 class ConsultancySerializer(serializers.ModelSerializer):
 
