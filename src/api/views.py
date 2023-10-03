@@ -11,7 +11,7 @@ from api.models import Role, Position, Ticket, AcademicTitle, AcademicDegree, Ed
 
 from user.models import User
 
-from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer, NewTicketSerializer, UpdateTicketStatusSerializer
+from api.serializers import UserSerializer, RoleSerializer, PositionSerializer, TicketSerializer, TicketSerializer, AcademicTitleSerializer, AcademicDegreeSerializer, EducationBaseSerializer, EduFormSerializer, EduLevelSerializer, GraduationSerializer, StudStatusSerializer, WorkTypeSerializer, VkrHoursSerializer, ConsultancySerializer, SpecialitySerializer, StudentGroupSerializer, TimeNormSerializer, SpecialityCreateSerializer, UserProfileSerializer, NewTicketSerializer, UpdateTicketStatusSerializer,UserCreateSerializer
 
 from api import serializers
 
@@ -21,7 +21,7 @@ from api.permission import IsStudent, IsTeacher, IsSpecialist, IsSpecialistOrTea
 from datetime import datetime
 # from api.permission import IsStudent
 from api.constants import Role as RoleEnum, TicketStatusEnum
-
+ 
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -30,7 +30,18 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["role"]
+    # filterset_fields = ['roleid', 'positionid']
+    # filter_backends = [filters.SearchFilter]
+    search_fields = ['first_name', 'last_name']
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update']:
+            return UserCreateSerializer
+        else:
+            return UserSerializer
+
+
+
 
 class GetSelfProfileView(APIView):
 

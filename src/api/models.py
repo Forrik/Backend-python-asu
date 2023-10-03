@@ -256,6 +256,7 @@ class StudentGroup(models.Model):
         EduForm, on_delete=models.SET_NULL, null=True)
     eduGraduation_id = models.ForeignKey(
         Graduation, on_delete=models.SET_NULL, null=True)
+        
 
     class Meta:
         ordering = ['-id']
@@ -264,7 +265,7 @@ class StudentGroup(models.Model):
         verbose_name_plural = 'Группы'
 
     def __str__(self):
-        return f'{self.id}: {self.course} курс {self.number} группы {self.speciality_id} {self.eduForm_id}'
+        return f'{self.speciality_id.abbreviation}-{self.number}'
         
 
 class TimeNorm(models.Model):

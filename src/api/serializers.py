@@ -27,6 +27,14 @@ class RoleSerializer(serializers.Serializer):
         model = Role
         fields = ('id', 'name')
 
+class UserCreateSerializer(serializers.ModelSerializer):
+    role = serializers.IntegerField()
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'password', 'first_name', 'middle_name', 'last_name', 'position', 'role',)
+        extra_kwargs = {'password': {'write_only': True}}
+
 
 class PositionSerializer(serializers.Serializer):
     id = serializers.ReadOnlyField()
@@ -190,6 +198,7 @@ class SpecialityCreateSerializer(SpecialitySerializer):
     edulevel = serializers.PrimaryKeyRelatedField(queryset=EduLevel.objects.all(), required=True)
     
 
+
 class StudentGroupSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
@@ -256,8 +265,8 @@ class TimeNormSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
 
     position = PositionSerializer()
-    studentGroup = StudentGroupSerializer()
-    eduLevel = EduLevelSerializer()
+    studentGroup = StudentGroupSerializer(required=False)
+    eduLevel = EduLevelSerializer(required=False)
     role = serializers.SerializerMethodField()
     educationBase = EducationBaseSerializer(required=False)
     academicTitle = AcademicTitleSerializer(required=False)
@@ -337,7 +346,8 @@ class GroupWithStudentSerializer(ShortUserWithRoleSerializer):
         fields = ('id', 
                   'hours',
                   'group_name',
-                  'students'
+                  'students',
+
                   )
     
     def get_group_name(self, obj):
@@ -376,3 +386,4 @@ class TimeNormGraduationSerializer(ShortTeacherWithGroupsSerializer):
             return None
         
         return obj.hours_sum
+
