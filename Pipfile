@@ -10,6 +10,7 @@ djangorestframework-simplejwt = "==4.5.0"
 psycopg2-binary = "==2.8.5"
 PyJWT = "==1.7.1"
 Pillow = "==9.1.0"
+Faker = "==19.6.2"
 
 [dev-packages]
 pytest = "7.0.1"

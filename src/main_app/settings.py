@@ -21,19 +21,19 @@ SECRET_KEY = os.environ.get("APP_SECRET_KEY", "unsafe-secret-key")
 DEBUG = os.environ.get("DJANGO_DEBUG", "True") == "True"
 ALLOWED_HOSTS = ["*"]
 
-DB_HOST = os.environ.get('DB_HOST')
-DB_NAME = os.environ.get('DB_NAME')
-DB_USER = os.environ.get('DB_USER')
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
+DB_HOST = os.environ.get("DB_HOST")
+DB_NAME = os.environ.get("DB_NAME")
+DB_USER = os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'HOST': DB_HOST,
-        'PORT': 5432,
-        'USER': DB_USER,
-        'PASSWORD': DB_PASSWORD,
-        'NAME': DB_NAME,
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "HOST": DB_HOST,
+        "PORT": 5432,
+        "USER": DB_USER,
+        "PASSWORD": DB_PASSWORD,
+        "NAME": DB_NAME,
     }
 }
 
@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     "django_filters",
     "corsheaders",
     "user",
-    "api"
+    "api",
 ]
 AUTH_USER_MODEL = "user.User"
 MIDDLEWARE = [
@@ -60,6 +60,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
+
 ]
 
 ROOT_URLCONF = "main_app.urls"
@@ -98,13 +99,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication"
     ],
-
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
     "DATE_INPUT_FORMATS": ["%d.%m.%Y"],

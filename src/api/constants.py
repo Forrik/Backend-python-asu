@@ -1,5 +1,4 @@
 from enum import IntEnum
-
 from typing import Any, Optional
 
 
@@ -8,7 +7,7 @@ class IntDescriptionEnum(IntEnum):
 
     def __new__(
         cls, value: int, description: Optional[str] = None
-    ) -> 'IntDescriptionEnum':
+    ) -> "IntDescriptionEnum":
         obj = int.__new__(cls, value)
         obj._value_ = value
 
@@ -17,7 +16,7 @@ class IntDescriptionEnum(IntEnum):
         return obj
 
     @classmethod
-    def _missing_(cls, _: Any) -> 'IntDescriptionEnum':
+    def _missing_(cls, _: Any) -> "IntDescriptionEnum":
         return cls.UNKNOWN_VALUE  # type: ignore
 
     @classmethod
@@ -29,6 +28,7 @@ class Role(IntDescriptionEnum):
     STUDENT = 1, "Студент"
     TEACHER = 2, "Преподаватель"
     SPECIALIST = 3, "Специалист УМР"
+
 
 class TicketStatusEnum(IntDescriptionEnum):
     NEW = 1, "Новая"
