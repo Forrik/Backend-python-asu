@@ -26,6 +26,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "last_name",
             "position",
             "role",
+            "academic_title",
+            "academic_degree",
         )
         extra_kwargs = {"password": {"write_only": True}}
 
@@ -145,9 +147,17 @@ class GraduationSerializer(serializers.ModelSerializer):
     graduation_type = serializers.CharField(required=True)
     year = serializers.IntegerField(required=True)
 
+    def validate(self, attrs):
+        if Graduation.objects.filter(graduation_type=attrs['graduation_type'], year=attrs['year']).exists():
+            raise serializers.ValidationError("Такой выпуск уже существует")
+
+        return attrs  
+
     class Meta:
         model = Graduation
         fields = ("id", "graduation_type", "year")
+
+  
 
 
 class StudentStatusSerializer(serializers.ModelSerializer):
@@ -174,15 +184,7 @@ class ConsultancyTypeSerializer(serializers.ModelSerializer):
         fields = ("id", "name")
 
 
-class VkrHoursSerializer(serializers.ModelSerializer):
 
-    id = serializers.ReadOnlyField()
-    year = serializers.IntegerField(required=True)
-    hours = serializers.IntegerField(required=True)
-
-    class Meta:
-        model = VkrHours
-        fields = ("id", "year", "hours")
 
 
 class ConsultancySerializer(serializers.ModelSerializer):
@@ -277,7 +279,7 @@ class StudentGroupCreateSerializer(serializers.ModelSerializer):
         )
 
 class ShortStudentSerializer(ShortUserSerializer):
-    student_group = StudentGroupSerializer(source="student_group")
+    student_group = StudentGroupSerializer()
 
     class Meta:
         model = User
@@ -333,6 +335,14 @@ class TimeNormSerializer(serializers.ModelSerializer):
         model = TimeNorm
         fields = ("id", "hours", "speciality", "consultancy_type", "graduation")
 
+class TimeNormCreateSerializer(serializers.ModelSerializer):
+
+    
+    
+    class Meta:
+        model = TimeNorm
+        fields = ("id", "hours", "speciality", "consultancy_type", "graduation")
+
 
 class UserSerializer(serializers.ModelSerializer):
 
@@ -343,7 +353,7 @@ class UserSerializer(serializers.ModelSerializer):
     education_base = EducationBaseSerializer(required=False)
     academic_title = AcademicTitleSerializer(required=False)
     academic_degree = AcademicDegreeSerializer(required=False)
-    vkr_hours = VkrHoursSerializer(required=False, many=True)
+
 
     class Meta:
         model = User
@@ -364,7 +374,6 @@ class UserSerializer(serializers.ModelSerializer):
             "academic_title",
             "academic_degree",
             "education_level",
-            "vkr_hours",
         )
         extra_kwargs = {"password": {"write_only": True}}
 
@@ -396,6 +405,30 @@ class UserProfileSerializer(UserSerializer):
             "education_level",
         )
 
+
+class VkrHoursSerializer(serializers.ModelSerializer):
+
+    id = serializers.ReadOnlyField()
+    year = serializers.IntegerField(required=True)
+    hours = serializers.IntegerField(required=True)
+    teacher = ShortUserSerializer()
+
+    class Meta:
+        model = VkrHours
+        fields = ("id", "year", "hours", "teacher")
+
+class VkrHoursCreateSerializer(serializers.ModelSerializer):
+
+    id = serializers.ReadOnlyField()
+    year = serializers.IntegerField(required=True)
+    hours = serializers.IntegerField(required=True)
+    teacher = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=True
+    )
+
+    class Meta:
+        model = VkrHours
+        fields = ("id", "year", "hours", "teacher")
 
 class CustomTokenObtainSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):

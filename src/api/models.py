@@ -290,6 +290,15 @@ class Graduation(models.Model):
         verbose_name = "Выпуск"
         verbose_name_plural = "Выпуски"
 
+        constraints = [
+            UniqueConstraint(
+                'graduation_type',
+                'year',
+                name='graduation_type_unique',
+                violation_error_message='Такой выпуск уже существует',
+            ),
+        ] 
+
     def __str__(self):
         return f"id: {self.id}"
 
@@ -322,7 +331,7 @@ class Speciality(models.Model):
 
 class StudentGroup(models.Model):
     speciality = models.ForeignKey(
-        Speciality, on_delete=models.SET_NULL, null=True, verbose_name="Специальность"
+        Speciality, on_delete=models.CASCADE, null=False, blank=False, verbose_name="Специальность"
     )
     course = models.IntegerField(verbose_name="Курс", blank=False, null=False)
     number = models.IntegerField(verbose_name="Номер группы", blank=False, null=False)
@@ -343,7 +352,9 @@ class StudentGroup(models.Model):
         verbose_name_plural = "Группы"
 
     def __str__(self):
-        return f"{self.speciality.abbreviation}-{self.number}"
+        if self.speciality:
+            return f"{self.speciality.abbreviation}-{self.number}"
+        return f"У группы не указана аббревиатура"
 
 
 class TimeNorm(models.Model):
@@ -373,7 +384,7 @@ class TimeNorm(models.Model):
         db_table = "time_norm"
         verbose_name = "Норма времени"
         verbose_name_plural = "Нормы времени"
-
+    
 
 
     def __str__(self):

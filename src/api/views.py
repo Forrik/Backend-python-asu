@@ -29,7 +29,7 @@ from api.serializers import (AcademicDegreeSerializer, AcademicTitleSerializer,
                              TicketSerializer, TimeNormSerializer,
                              UpdateTicketStatusSerializer,
                              UserCreateSerializer, UserProfileSerializer,
-                             UserSerializer, VkrHoursSerializer, StudentGroupCreateSerializer)
+                             UserSerializer, VkrHoursSerializer, StudentGroupCreateSerializer, VkrHoursCreateSerializer, TimeNormCreateSerializer)
 from user.models import User
 from django.db import connection
 from django.db.models import Prefetch
@@ -135,7 +135,12 @@ class ConsultancyTypeViewSet(viewsets.ModelViewSet):
 class VkrHoursViewSet(viewsets.ModelViewSet):
 
     queryset = VkrHours.objects.all()
-    serializer_class = VkrHoursSerializer
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return VkrHoursCreateSerializer
+        else:
+            return VkrHoursSerializer    
 
 
 class ConsultancyViewSet(viewsets.ModelViewSet):
@@ -160,6 +165,9 @@ class StudentGroupViewSet(viewsets.ModelViewSet):
     queryset = StudentGroup.objects.all()
     serializer_class = StudentGroupSerializer
 
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ["graduation"]
+
     def get_serializer_class(self):
         if self.action in ["create", "update"]:
             return StudentGroupCreateSerializer
@@ -171,6 +179,12 @@ class TimeNormViewSet(viewsets.ModelViewSet):
 
     queryset = TimeNorm.objects.all()
     serializer_class = TimeNormSerializer
+
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return TimeNormCreateSerializer
+        else:
+            return TimeNormSerializer   
 
 
 class CustomTokenObtainView(TokenObtainPairView):
