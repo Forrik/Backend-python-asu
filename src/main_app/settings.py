@@ -111,6 +111,7 @@ REST_FRAMEWORK = {
     "DATE_FORMAT": "%d-%m-%Y",
     "DATETIME_FORMAT": "%d-%m-%Y %H:%M",
     "DATETIME_INPUT_FORMATS": ["%d.%m.%Y"],
+    'EXCEPTION_HANDLER': 'api.utils.exception_handler.custom_exception_handler'
 }
 
 SIMPLE_JWT = {

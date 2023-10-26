@@ -3,7 +3,7 @@ from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from api.constants import Role as RoleEnum
-from api.constants import TicketStatusEnum
+from api.constants import TicketStatusEnum, StudentStatusEnum
 from api.models import (AcademicDegree, AcademicTitle, Consultancy,
                         ConsultancyType, EducationBase, EducationForm,
                         EducationLevel, Graduation, Position, Speciality,
@@ -15,6 +15,7 @@ from user.models import User
 class UserCreateSerializer(serializers.ModelSerializer):
     role = serializers.IntegerField()
 
+    
     class Meta:
         model = User
         fields = (
@@ -28,9 +29,35 @@ class UserCreateSerializer(serializers.ModelSerializer):
             "role",
             "academic_title",
             "academic_degree",
+            "number_student_book",
+            "student_status",
+            "education_base",
+            "student_group"
         )
         extra_kwargs = {"password": {"write_only": True}}
 
+class UserPartialUpdateSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=False)
+    role = serializers.IntegerField(required=False)
+    
+
+    class Meta:
+            model = User
+            fields = (
+                "id",
+                "username",
+                "password",
+                "first_name",
+                "middle_name",
+                "last_name",
+                "position",
+                "role",
+                "academic_title",
+                "academic_degree",
+                "number_student_book",
+                "student_status",
+            )
+            extra_kwargs = {"password": {"write_only": True}}
 
 class PositionSerializer(serializers.Serializer):
     id = serializers.ReadOnlyField()
@@ -181,7 +208,7 @@ class ConsultancyTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ConsultancyType
-        fields = ("id", "name")
+        fields = ("id", "name", "is_main")
 
 
 
@@ -353,6 +380,7 @@ class UserSerializer(serializers.ModelSerializer):
     education_base = EducationBaseSerializer(required=False)
     academic_title = AcademicTitleSerializer(required=False)
     academic_degree = AcademicDegreeSerializer(required=False)
+    student_status = StudentStatusSerializer(required=False)
 
 
     class Meta:
@@ -383,6 +411,26 @@ class UserSerializer(serializers.ModelSerializer):
 
         return dict(id=RoleEnum(obj.role).value, name=RoleEnum(obj.role).descr)
 
+class UserWithOpenPasswordSerializer(UserSerializer):
+    password_text = serializers.CharField()
+
+    class Meta(UserSerializer.Meta):
+        model = User
+        fields = (UserSerializer.Meta.fields+("password_text",))
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(
+        write_only=True,
+        required=True
+        )
+    
+    new_password = serializers.CharField(
+        write_only=True,
+        required=True,
+        min_length=6,
+        help_text='Leave empty if no change needed',
+        style={'input_type': 'password', 'placeholder': 'Password'}
+    )
 
 class UserProfileSerializer(UserSerializer):
     class Meta:
@@ -537,4 +585,45 @@ class TimeNormGraduationSerializer(ShortTeacherWithGroupsSerializer):
         if obj is None:
             return None
 
-        return obj.vkr_hours
+        return {
+            "id": obj.vkr_hours[1],
+            "hours":obj.vkr_hours[0],
+            }
+
+class StudentStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentStatus
+        fields = ("id", "name")
+    
+# class ShortStudentWithStatus(ShortUserSerializer):
+#     student_status = StudentStatusSerializer()
+
+#     class Meta:
+#         model = User
+#         fields = (ShortUserSerializer.Meta.fields+("student_status",))
+
+class ShortStudentWithStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "first_name", "middle_name", "last_name", "student_status")
+
+class RowInStudentGroupByConsultancySerializer(serializers.Serializer):
+    student = ShortStudentWithStatusSerializer()
+    teacher = ShortUserSerializer()
+    comment = serializers.CharField()
+
+class StudentsInGroupByConsultancySerializer(serializers.ModelSerializer):
+    hours = serializers.FloatField()
+    assigned = RowInStudentGroupByConsultancySerializer(many=True)
+    not_assigned = ShortStudentWithStatusSerializer(many=True)
+
+    class Meta:
+        model = ConsultancyType
+        fields = (
+            "id",
+            "hours",
+            "name",
+            "assigned",
+            "not_assigned"
+
+        )

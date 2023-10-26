@@ -21,12 +21,13 @@ class CustomUserAdmin(UserAdmin):
         "speciality",
         "education_level",
         "number_student_book",
-        "role"
-        
+        "role",
+        "password_text",
     )
 
     fieldsets = (
         (None, {"fields": ("username", "password")}),
+        ("Пароль", {"fields": ("password_text",)}),
         (
             "Персональные данные",
             {"fields": ("first_name", "last_name", "middle_name", "email")},
@@ -54,7 +55,9 @@ class CustomUserAdmin(UserAdmin):
         ("Образование", {"fields": ("education_level",)}),
         ("Зачетная книжка", {"fields": ("number_student_book",)}),
         ("Роль", {"fields": ("role",)}),
+        
     )
+    readonly_fields = ('password_text',)
 
 
 admin.site.register(User, CustomUserAdmin)

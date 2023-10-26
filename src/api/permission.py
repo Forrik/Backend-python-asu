@@ -48,3 +48,4 @@ class IsSpecialistOrTeacher(BasePermission):
         ):
             return True
         return False
+

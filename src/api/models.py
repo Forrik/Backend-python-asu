@@ -2,6 +2,10 @@ from django.db import models
 
 from api.constants import TicketStatusEnum
 from django.db.models import UniqueConstraint
+from django.core.exceptions import ValidationError
+from api.constants import Role
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from api.exceptions import BussinesLogicException
 
 class Position(models.Model):
     """
@@ -33,6 +37,9 @@ class Ticket(models.Model):
     message = models.TextField(
         verbose_name="Сообщение", blank=False, null=False, max_length=1024
     )
+    comment = models.CharField(
+        verbose_name="Комментарий", blank=True, null=True, max_length=512
+    )
 
     ticket_status = models.IntegerField(
         choices=[
@@ -44,14 +51,89 @@ class Ticket(models.Model):
         verbose_name="Статус заявки",
     )
     teacher = models.ForeignKey(
-        "user.User", on_delete=models.SET_NULL, null=True, related_name="teacher"
+        "user.User", on_delete=models.CASCADE, related_name="teacher"
     )
     student = models.ForeignKey(
-        "user.User", on_delete=models.SET_NULL, null=True, related_name="student"
+        "user.User", on_delete=models.CASCADE, related_name="student"
     )
     dt_response = models.DateTimeField(
         verbose_name="Дата ответа", blank=True, null=True
     )
+
+    _validation_error_text = f"Не удалось создать заявку. Обратитесь к администратору системы. Детали:"
+    
+    def __check_free_hours(self):
+        student_group = self.student.student_group
+        used_hours = self.teacher.get_used_hours(student_group.graduation)
+        try:
+            all_hours = VkrHours.objects.get(teacher=self.teacher, year=student_group.graduation.year).hours
+        except ObjectDoesNotExist:
+            raise ValidationError(message=  f"Для преподавателя {self.teacher.get_abbreviation()} (id={self.teacher.id}) не задано количество часов для ВКР")
+        
+        except MultipleObjectsReturned:
+            raise ValidationError(message = f"Для преподавателя {self.teacher.get_abbreviation()} (id={self.teacher.id}) существует более одной записи с количеством часов для ВКР")
+        try:
+            main_consultancy_type = ConsultancyType.objects.filter(is_main=True).get()
+
+        except ObjectDoesNotExist:
+            raise ValidationError(message="Не задан основной тип консультации")
+        
+        except MultipleObjectsReturned:
+            raise ValidationError(message="Задано несколько основных типов консультации")
+        try:
+            hours_for_ticket = TimeNorm.objects.get(
+                graduation=student_group.graduation,
+                speciality=student_group.speciality,
+                consultancy_type=main_consultancy_type,
+                )
+        except ObjectDoesNotExist:
+            raise ValidationError(message="Не задана норма времени для основного типа консультации")
+        
+        except MultipleObjectsReturned:
+            raise ValidationError(message="Задано несколько норм времени для основного типа консультации")
+
+
+        hours_delta = all_hours - used_hours - hours_for_ticket.hours
+        if hours_delta <= 0:
+            raise ValidationError(
+                f"Невозможно сформировать заявку, т.к. у преподавателя {self.teacher.get_abbreviation()} не осталось свободных часов")
+        return True
+
+    def clean_fields(self, *args, **kwargs):
+        super().clean_fields(*args, **kwargs)
+        
+        if self.student.role != Role.STUDENT.value:
+            raise ValidationError(f"{self._validation_error_text} Пользователь {self.student.get_abbreviation()} (id={self.student.id}) не является студентом") 
+        
+        if self.teacher.role != Role.TEACHER.value:
+            raise ValidationError(f"{self._validation_error_text} Пользователь {self.teacher.get_abbreviation()} (id={self.teacher.id}) не является преподавателем")
+
+        # Если уже есть ACCEPTED заявка, то все остальные отклоняются
+        if self.id == None or self.ticket_status == TicketStatusEnum.ACCEPTED:
+            if Ticket.objects.filter(
+                student=self.student,
+                ticket_status=TicketStatusEnum.ACCEPTED.value
+            ).exists():
+                raise ValidationError(f"Уже существует принятая заявка")
+        
+        if self.ticket_status in [TicketStatusEnum.ACCEPTED.value, TicketStatusEnum.NEW.value]:
+            self.__check_free_hours()
+            
+        
+
+        
+
+    def save(self, *args, **kwargs):
+        self.clean_fields()
+
+        # Если заявка меняет статус на ACCEPTED, то все остальные заявки становятся REJECTED
+        if self.ticket_status == TicketStatusEnum.ACCEPTED.value:
+            Ticket.objects \
+            .filter(student=self.student) \
+            .exclude(student=self.student, teacher=self.teacher) \
+            .update(ticket_status=TicketStatusEnum.REJECTED.value)
+
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-id"]
@@ -78,12 +160,12 @@ class AcademicTitle(models.Model):
     """
 
     name = models.CharField(
-        verbose_name="Название ученого звания", blank=False, null=False, max_length=128
+        verbose_name="Название ученого звания", blank=False, null=False, max_length=128, unique=True
     )
     abbreviation = models.CharField(
         verbose_name="Сокращенное название ученого звания",
         default="аббревиатура",
-        max_length=128,
+        max_length=128, 
     )
 
     class Meta:
@@ -102,7 +184,7 @@ class AcademicDegree(models.Model):
     """
 
     name = models.CharField(
-        verbose_name="Название ученой степени", blank=False, null=False, max_length=128
+        verbose_name="Название ученой степени", blank=False, null=False, max_length=128, unique=True
     )
     abbreviation = models.CharField(
         verbose_name="Сокращенное название ученой степени",
@@ -126,7 +208,7 @@ class EducationBase(models.Model):
     """
 
     name = models.CharField(
-        verbose_name="Название основы обучения", blank=False, null=False, max_length=128
+        verbose_name="Название основы обучения", blank=False, null=False, max_length=128, unique=True
     )
 
     class Meta:
@@ -156,8 +238,17 @@ class VkrHours(models.Model):
         verbose_name = "Часы на ВКР"
         verbose_name_plural = "Часы на ВКР"
 
+        constraints = [
+            UniqueConstraint(
+                'year',
+                'teacher',
+                name='vkrhours_year_teacher_unique',
+                violation_error_message='Часы на ВКР для этого преподавателя и года уже заданы',
+            ),
+        ]
+
     def __str__(self):
-        return f"{self.id}:" + str(self.hours) + " часов" + " " + str(self.year)
+        return f"{self.teacher.id}:" + str(self.hours) + " часов" + " " + str(self.year)
 
 
 class StudentStatus(models.Model):  # TODO ?? какие статусы быват у студентов?
@@ -185,7 +276,7 @@ class ConsultancyType(models.Model):
     """
 
     name = models.CharField(
-        verbose_name="Тип консультации", blank=False, null=False, max_length=128
+        verbose_name="Тип консультации", blank=False, null=False, max_length=128, unique=True
     )
     is_main = models.BooleanField(
         verbose_name="Основной", blank=False, null=False, default=False
@@ -195,7 +286,7 @@ class ConsultancyType(models.Model):
         ordering = ["-id"]
         db_table = "consultancy_type"
         verbose_name = "Вид работы"
-        verbose_name_plural = "Виды работы"
+        verbose_name_plural = "Вид консультации"
 
     def __str__(self):
         return f"{self.id}: {self.name}"
@@ -204,17 +295,63 @@ class ConsultancyType(models.Model):
 class Consultancy(models.Model):
 
     consultancy_type = models.ForeignKey(
-        ConsultancyType, on_delete=models.SET_NULL, null=True
+        ConsultancyType, on_delete=models.CASCADE
     )
     teacher = models.ForeignKey(
-        "user.User", on_delete=models.SET_NULL, null=True, related_name="teacherr"
+        "user.User", on_delete=models.CASCADE, null=False, related_name="teacherr"
     )
     student = models.ForeignKey(
-        "user.User", on_delete=models.SET_NULL, null=True, related_name="studentt"
+        "user.User", on_delete=models.CASCADE, null=False, related_name="studentt"
     )
     comment = models.CharField(
-        verbose_name="Комментарий", blank=False, null=False, max_length=128
+        verbose_name="Комментарий", blank=True, null=True, max_length=512
     )
+    _validation_error_text = f"Не удалось создать заявку. Обратитесь к администратору системы. Детали:"
+    def __check_free_hours(self):
+        student_group = self.student.student_group
+        used_hours = self.teacher.get_used_hours(student_group.graduation)
+        try:
+            all_hours = VkrHours.objects.get(teacher=self.teacher, year=student_group.graduation.year).hours
+        except ObjectDoesNotExist:
+            raise ValidationError(message = f"Для преподавателя {self.teacher.get_abbreviation()} (id={self.teacher.id}) не задано количество часов для ВКР")
+        
+        except MultipleObjectsReturned:
+            raise ValidationError(message = f"Для преподавателя {self.teacher.get_abbreviation()} (id={self.teacher.id}) существует более одной записи с количеством часов для ВКР")
+
+        try:
+            hours_for_ticket = TimeNorm.objects.get(
+                graduation=student_group.graduation,
+                speciality=student_group.speciality,
+                consultancy_type=self.consultancy_type,
+                )
+        except ObjectDoesNotExist:
+            raise ValidationError(message="Не задана норма времени для выбранного типа консультации")
+        
+        except MultipleObjectsReturned:
+            raise ValidationError(message="Задано несколько норм времени для выбранного типа консультации")
+
+
+        hours_delta = all_hours - used_hours - hours_for_ticket.hours
+        if hours_delta <= 0:
+            raise ValidationError(
+                f"Невозможно выполнить запись на консультацию, т.к. у преподавателя {self.teacher.get_abbreviation()} не осталось свободных часов")
+        return True
+
+    def clean_fields(self, *args, **kwargs):
+        super().clean_fields(*args, **kwargs)
+        
+        if self.student.role != Role.STUDENT.value:
+            raise ValidationError(f"{self._validation_error_text} Пользователь {self.student.get_abbreviation()} (id={self.student.id}) не является студентом") 
+        
+        if self.teacher.role != Role.TEACHER.value:
+            raise ValidationError(f"{self._validation_error_text} Пользователь {self.teacher.get_abbreviation()} (id={self.teacher.id}) не является преподавателем")
+
+        self.__check_free_hours()
+        
+
+    def save(self, *args, **kwargs):
+        self.clean_fields()
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ["-id"]
@@ -242,7 +379,7 @@ class EducationLevel(models.Model):
     """
 
     name = models.CharField(
-        verbose_name="Уровень образования", blank=False, null=False, max_length=128
+        verbose_name="Уровень образования", blank=False, null=False, max_length=128, unique=True
     )
 
     class Meta:
@@ -261,7 +398,7 @@ class EducationForm(models.Model):
     """
 
     name = models.CharField(
-        verbose_name="Название формы обучения", blank=False, null=False, max_length=128
+        verbose_name="Название формы обучения", blank=False, null=False, max_length=128, unique=True
     )
 
     class Meta:
@@ -269,9 +406,11 @@ class EducationForm(models.Model):
         db_table = "edu_form"
         verbose_name = "Форма обучения"
         verbose_name_plural = "Формы обучения"
+        
 
     def __str__(self):
         return f"{self.id}: {self.name}"
+    
 
 
 class Graduation(models.Model):
@@ -325,8 +464,11 @@ class Speciality(models.Model):
         verbose_name = "Специальность"
         verbose_name_plural = "Специальности"
 
+        
+
     def __str__(self):
         return f"Специльность №{self.id} {self.name}"
+    
 
 
 class StudentGroup(models.Model):
@@ -351,10 +493,24 @@ class StudentGroup(models.Model):
         verbose_name = "Группа"
         verbose_name_plural = "Группы"
 
+        constraints = [
+            UniqueConstraint(
+                'speciality',
+                'course',
+                'number',
+                'graduation',
+                'education_form',
+                name='student_group_unique',
+                violation_error_message='Группа уже существует',
+            ),
+        ]
+
     def __str__(self):
         if self.speciality:
             return f"{self.speciality.abbreviation}-{self.number}"
         return f"У группы не указана аббревиатура"
+
+    
 
 
 class TimeNorm(models.Model):
@@ -367,16 +523,16 @@ class TimeNorm(models.Model):
         verbose_name="Количество часов", blank=False, null=False
     )
     speciality = models.ForeignKey(
-        Speciality, on_delete=models.SET_NULL, null=True, verbose_name="Специальность"
+        Speciality, on_delete=models.CASCADE, blank=False, null=False, verbose_name="Специальность"
     )
     consultancy_type = models.ForeignKey(
         ConsultancyType,
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
+        blank=False, null=False,
         verbose_name="Вид консультации",
     )
     graduation = models.ForeignKey(
-        Graduation, on_delete=models.SET_NULL, null=True, verbose_name="Выпуск"
+        Graduation, on_delete=models.CASCADE, blank=False, null=False, verbose_name="Выпуск"
     )
 
     class Meta:
@@ -384,6 +540,16 @@ class TimeNorm(models.Model):
         db_table = "time_norm"
         verbose_name = "Норма времени"
         verbose_name_plural = "Нормы времени"
+
+        constraints = [
+            UniqueConstraint(
+                'speciality',
+                'graduation',
+                'consultancy_type',
+                name='timenorm_for_speciality_graduation_consultancy_unique',
+                violation_error_message='Норма времени уже существует',
+            ),
+        ]
     
 
 

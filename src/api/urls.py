@@ -3,19 +3,20 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView)
 
-from api.views import (AcademicDegreeViewSet, AcademicTitleViewSet,
+from api.views import (AcademicDegreeViewSet, AcademicTitleViewSet, ChangePasswordView,
                        ConsultancyTypeViewSet, ConsultancyViewSet,
                        CustomTokenObtainView, EducationBaseViewSet,
-                       EducationFormViewSet, EducationLevelViewSet,
+                       EducationFormViewSet, EducationLevelViewSet, GerStudentsByConsultancyView,
                        GetSelfProfileView, GraduationViewSet, PositionViewSet,
                         SpecialityViewSet, StudentGroupViewSet,
                        StudentStatusViewSet, TicketCreateView,
                        TicketStatusUpdate, TicketViewSet, TimeNormViewSet,
-                       UserGraduationView, UserViewSet, VkrHoursViewSet)
+                       UserGraduationView, UserViewSet, UsersForSpecialistViewSet, VkrHoursViewSet)
 
 router = DefaultRouter()
 
 router.register(r"user", UserViewSet, basename="user")
+router.register(r"user_unsafe", UsersForSpecialistViewSet, basename="user")
 router.register(r"position", PositionViewSet, basename="position")
 router.register(r"ticket", TicketViewSet, basename="ticket")
 router.register(r"academic_title", AcademicTitleViewSet, basename="academic_title")
@@ -38,6 +39,7 @@ urlpatterns = [
     path("login/", CustomTokenObtainView.as_view(), name="token_obtain_pair"),
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("me/", GetSelfProfileView.as_view()),
+    path("change_password/", ChangePasswordView.as_view()),
     path(
         "user_graduation/<int:graduation_id>",
         UserGraduationView.as_view(),
@@ -49,6 +51,7 @@ urlpatterns = [
         TicketStatusUpdate.as_view(),
         name="ticket_status_update",
     ),
+    path("students_by_consultancy/<int:group_id>", GerStudentsByConsultancyView.as_view()),
 
 ]
 
