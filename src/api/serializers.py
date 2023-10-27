@@ -612,6 +612,7 @@ class RowInStudentGroupByConsultancySerializer(serializers.Serializer):
     student = ShortStudentWithStatusSerializer()
     teacher = ShortUserSerializer()
     comment = serializers.CharField()
+    id = serializers.IntegerField()
 
 class StudentsInGroupByConsultancySerializer(serializers.ModelSerializer):
     hours = serializers.FloatField()
@@ -625,6 +626,6 @@ class StudentsInGroupByConsultancySerializer(serializers.ModelSerializer):
             "hours",
             "name",
             "assigned",
-            "not_assigned"
-
+            "not_assigned",
+            "is_main"
         )
