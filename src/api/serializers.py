@@ -558,6 +558,7 @@ class ShortTeacherWithGroupsSerializer(ShortUserWithRoleSerializer):
     groups = GroupWithStudentSerializer(many=True, source="groups_set")
 
 
+
 class TimeNormGraduationSerializer(ShortTeacherWithGroupsSerializer):
 
     hours_sum = serializers.SerializerMethodField()

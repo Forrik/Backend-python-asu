@@ -196,6 +196,8 @@ class ConsultancyTypeViewSet(viewsets.ModelViewSet):
     queryset = ConsultancyType.objects.all()
     serializer_class = ConsultancyTypeSerializer
 
+    
+
 
 class VkrHoursViewSet(viewsets.ModelViewSet):
 
@@ -215,6 +217,7 @@ class ConsultancyViewSet(viewsets.ModelViewSet):
 
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["student", "teacher", "consultancy_type"]
+
 
 
 

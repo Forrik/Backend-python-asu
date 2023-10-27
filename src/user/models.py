@@ -184,7 +184,7 @@ class User(AbstractUser):
             hours += _hours
 
         for consultancy in cons_qs:
-            _cons_hours = tn_dict.get(f"{consultancy.consultancy_type.id}_{ticket.student.student_group.speciality.id}_{graduation.id}")
+            _cons_hours = tn_dict.get(f"{consultancy.consultancy_type.id}_{consultancy.student.student_group.speciality.id}_{graduation.id}")
 
             if _cons_hours is None:
                 err_text = (f"Не задана норма времени для специальности "
