@@ -362,9 +362,10 @@ class UserGraduationView(APIView):
                     )
 
                 student.hours = _hours
-                group.hours += student.hours
-                teacher.hours_sum += student.hours
-
+                group.hours += _hours
+                teacher.hours_sum += _hours
+            else:
+                raise Exception("Такой студент уже есть в группе")
         for consultancy in cons_qs:
             teacher = consultancy.teacher
             if teacher not in result:
@@ -403,9 +404,9 @@ class UserGraduationView(APIView):
                     status=status.HTTP_400
                 )
             student.hours += _cons_hours
-
-            group.hours += student.hours
-            teacher.hours_sum += student.hours
+            
+            group.hours += _cons_hours
+            teacher.hours_sum += _cons_hours
         
         teachers_ids = [teacher.id for teacher in result]
 
