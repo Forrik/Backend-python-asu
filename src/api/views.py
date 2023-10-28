@@ -24,7 +24,7 @@ from api.serializers import (AcademicDegreeSerializer, AcademicTitleSerializer, 
                              EducationBaseSerializer, EducationFormSerializer,
                              EducationLevelSerializer, GraduationSerializer,
                              NewTicketSerializer, PositionSerializer,
-                             SpecialityCreateSerializer, SpecialitySerializer,
+                             SpecialityCreateSerializer, SpecialitySerializer, TicketCreateSerializer,
                              StudentGroupSerializer, StudentStatusSerializer,
                              TicketSerializer, TimeNormSerializer,
                              UpdateTicketStatusSerializer,
@@ -145,8 +145,14 @@ class TicketViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["ticket_status", "student", "teacher"]
 
+    # def get_serializer_class(self):
+    #     return TicketSerializer
+
     def get_serializer_class(self):
-        return TicketSerializer
+        if self.action in ["create", "update", "partial_update"]:
+            return TicketCreateSerializer
+        else:
+            return TicketSerializer                 
 
 
 class AcademicTitleViewSet(viewsets.ModelViewSet):

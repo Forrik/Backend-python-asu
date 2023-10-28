@@ -101,6 +101,17 @@ class UpdateTicketStatusSerializer(serializers.ModelSerializer):
         model = Ticket
         fields = ("ticket_status",)
 
+class TicketCreateSerializer(serializers.ModelSerializer):
+    student = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=True
+    )
+    teacher = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=True
+    )
+    
+    class Meta:
+        model = Ticket
+        fields = ("id", "message", "ticket_status", "student", "teacher")
 
 class AcademicTitleSerializer(serializers.ModelSerializer):
 
