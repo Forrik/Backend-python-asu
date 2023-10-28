@@ -64,6 +64,9 @@ class Ticket(models.Model):
     
     def __check_free_hours(self):
         student_group = self.student.student_group
+        if student_group is None:
+            raise ValidationError(message=  f"Для студента {self.student} (id={self.student.id}) не задана учебная группа")
+        
         used_hours = self.teacher.get_used_hours(student_group.graduation)
         try:
             all_hours = VkrHours.objects.get(teacher=self.teacher, year=student_group.graduation.year).hours
