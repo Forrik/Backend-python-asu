@@ -107,18 +107,30 @@ class Ticket(models.Model):
         
         if self.teacher.role != Role.TEACHER.value:
             raise ValidationError(f"{self._validation_error_text} Пользователь {self.teacher.get_abbreviation()} (id={self.teacher.id}) не является преподавателем")
+        
+        is_new_ticket = True if self.id == None else False
 
         # Если уже есть ACCEPTED заявка, то все остальные отклоняются
-        if self.id == None or self.ticket_status == TicketStatusEnum.ACCEPTED:
+        if is_new_ticket:
             if Ticket.objects.filter(
                 student=self.student,
                 ticket_status=TicketStatusEnum.ACCEPTED.value
             ).exists():
                 raise ValidationError(f"Уже существует принятая заявка")
-        
+        else:
+            existed_ticket = Ticket.objects.get(id=self.id)
+
+            # если статус заявки меняется
+            if existed_ticket.ticket_status != self.ticket_status and self.ticket_status == TicketStatusEnum.ACCEPTED:
+                if Ticket.objects.filter(
+                    student=self.student,
+                    ticket_status=TicketStatusEnum.ACCEPTED.value
+                ).exists():
+                    raise ValidationError(f"Уже существует принятая заявка")
+
         if self.ticket_status in [TicketStatusEnum.ACCEPTED.value, TicketStatusEnum.NEW.value]:
             self.__check_free_hours()
-            
+
         
 
         
