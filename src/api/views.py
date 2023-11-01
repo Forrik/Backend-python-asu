@@ -500,7 +500,7 @@ class TicketCreateView(APIView):
         ticket = Ticket.objects.create(
                 student=request.user,
                 teacher=serializer.validated_data["teacher"],
-                message=serializer.validated_data["message"],
+                comment=serializer.validated_data["comment"],
             )
 
         return Response(serializer.data)

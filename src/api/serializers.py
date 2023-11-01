@@ -89,11 +89,11 @@ class NewTicketSerializer(serializers.ModelSerializer):
     teacher = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), required=True
     )
-    message = serializers.CharField(required=True, max_length=1024)
+    comment = serializers.CharField(required=True, max_length=1024)
 
     class Meta:
         model = Ticket
-        fields = ("message", "teacher")
+        fields = ("comment", "teacher")
 
 
 class UpdateTicketStatusSerializer(serializers.ModelSerializer):
@@ -111,7 +111,7 @@ class TicketCreateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Ticket
-        fields = ("id", "message", "ticket_status", "student", "teacher")
+        fields = ("id", "comment", "ticket_status", "student", "teacher")
 
 class AcademicTitleSerializer(serializers.ModelSerializer):
 
@@ -237,7 +237,7 @@ class ConsultancySerializer(serializers.ModelSerializer):
     student = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), required=True
     )
-    comment = serializers.CharField(required=True, max_length=1024)
+    comment = serializers.CharField(required=False, allow_blank=True, allow_null=True, max_length=1024)
 
     class Meta:
         model = Consultancy
@@ -328,7 +328,7 @@ class TicketSerializer(serializers.ModelSerializer):
 
     id = serializers.ReadOnlyField()
     dt_send = serializers.DateTimeField(format="%d.%m.%Y %H:%M", required=True)
-    message = serializers.CharField(required=True, max_length=1024)
+    comment = serializers.CharField(required=True, max_length=1024)
     ticket_status = serializers.SerializerMethodField()
     teacher = ShortUserSerializer(required=True)
     student = ShortStudentSerializer(required=True)
@@ -339,7 +339,7 @@ class TicketSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "dt_send",
-            "message",
+            "comment",
             "ticket_status",
             "teacher",
             "student",
@@ -615,6 +615,7 @@ class StudentStatusSerializer(serializers.ModelSerializer):
 #         fields = (ShortUserSerializer.Meta.fields+("student_status",))
 
 class ShortStudentWithStatusSerializer(serializers.ModelSerializer):
+    student_status = StudentStatusSerializer()
     class Meta:
         model = User
         fields = ("id", "first_name", "middle_name", "last_name", "student_status")

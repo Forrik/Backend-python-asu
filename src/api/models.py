@@ -34,11 +34,9 @@ class Ticket(models.Model):
     dt_send = models.DateTimeField(
         verbose_name="Дата отправки заявки", blank=False, null=False, auto_now_add=True
     )
-    message = models.TextField(
-        verbose_name="Сообщение", blank=False, null=False, max_length=1024
-    )
+ 
     comment = models.CharField(
-        verbose_name="Комментарий", blank=True, null=True, max_length=512
+        verbose_name="Комментарий", blank=True, null=True, max_length=1024
     )
 
     ticket_status = models.IntegerField(
@@ -522,7 +520,7 @@ class StudentGroup(models.Model):
 
     def __str__(self):
         if self.speciality:
-            return f"{self.speciality.abbreviation}-{self.number}"
+            return f"{self.speciality.abbreviation}-{self.course}{self.number}"
         return f"У группы не указана аббревиатура"
 
     

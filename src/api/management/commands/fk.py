@@ -233,7 +233,7 @@ class Command(BaseCommand):
                     item = models.Ticket.objects.create(
                         student=student,
                         teacher=random.choice(teachers_items),
-                        message=fake.text(),
+                        comment=fake.text(),
                         ticket_status=random.choice(tickets_statuses),
                     )
                     ticket_items.append(item)
@@ -251,7 +251,7 @@ class Command(BaseCommand):
                     item = models.Ticket.objects.create(
                         student=student,
                         teacher=random.choice(teachers_items),
-                        message=fake.text(),
+                        comment=fake.text(),
                         ticket_status=TicketStatusEnum.ACCEPTED,
                     )
                     ticket_items.append(item)
@@ -268,7 +268,7 @@ class Command(BaseCommand):
                     item = models.Ticket.objects.create(
                         student=student,
                         teacher=random.choice(teachers_items),
-                        message=fake.text(),
+                        comment=fake.text(),
                         ticket_status=TicketStatusEnum.NEW,
                     )
                     ticket_items.append(item)
@@ -284,7 +284,7 @@ class Command(BaseCommand):
                     item = models.Ticket.objects.create(
                         student=student,
                         teacher=random.choice(teachers_items),
-                        message=fake.text(),
+                        comment=fake.text(),
                         ticket_status=TicketStatusEnum.REJECTED,
                     )
                     ticket_items.append(item)
